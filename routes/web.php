@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BukuController;
 use App\Http\Controllers\KategoriBukuController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\PeminjamanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +26,9 @@ Route::resource('kategori', KategoriBukuController::class);
 // Route CRUD Member
 Route::resource('member', MemberController::class);
 
-// Route Khusus Peminjaman & Pengembalian Buku
-Route::post('/peminjaman/pinjam', [MemberController::class, 'pinjam'])->name('peminjaman.pinjam');
-Route::post('/peminjaman/kembali/{id}', [MemberController::class, 'kembali'])->name('peminjaman.kembali');
+// Route Peminjaman Buku
+Route::get('/peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
+Route::post('/peminjaman', [PeminjamanController::class, 'pinjamBuku'])->name('peminjaman.store');
+
+//route pengembalian buku
+Route::post('/member/{id}/kembalikan', [MemberController::class, 'kembalikanBuku'])->name('member.kembalikan');

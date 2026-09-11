@@ -9,15 +9,15 @@ class KategoriBuku extends Model
 {
     use HasFactory;
 
+    // Menentukan nama tabel yang benar di SQLite/Database
     protected $table = 'kategori_bukus';
 
     protected $fillable = [
         'nama_kategori',
     ];
 
-    // Relasi: Satu Kategori memiliki banyak Buku (1 to Many)
     public function bukus()
     {
-        return $this->hasMany(Buku::class, 'kategori_buku_id');
+        return $this->hasMany(Buku::class, 'kategori_id');
     }
 }

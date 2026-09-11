@@ -9,25 +9,18 @@ class Buku extends Model
 {
     use HasFactory;
 
-    protected $table = 'bukus';
-
     protected $fillable = [
         'isbn',
+        'foto',
         'nama_buku',
         'stok',
-        'foto_buku',
-        'kategori_buku_id',
+        'kategori_id',
     ];
 
-    // Relasi: Buku milik satu Kategori
     public function kategori()
     {
-        return $this->belongsTo(KategoriBuku::class, 'kategori_buku_id');
-    }
-
-    // Relasi: Satu Buku dipinjam oleh banyak Member (1 to Many)
-    public function members()
-    {
-        return $this->hasMany(Member::class, 'buku_id');
+        return $this->belongsTo(KategoriBuku::class, 'kategori_id')->withDefault([
+            'nama_kategori' => 'Tidak Ada Kategori'
+        ]);
     }
 }

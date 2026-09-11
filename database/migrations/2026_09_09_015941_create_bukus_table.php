@@ -6,25 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('bukus', function (Blueprint $table) {
             $table->id();
-            $table->string('isbn')->unique();
+            $table->string('isbn');
+            $table->string('foto')->nullable();
             $table->string('nama_buku');
-            $table->integer('stok')->default(0);
-            $table->string('foto_buku')->nullable();
-            $table->foreignId('kategori_buku_id')->constrained('kategori_bukus')->onDelete('cascade');
-            $table->timestamps();    
+            $table->integer('stok');
+
+            // PERBAIKAN: constrained diarahkan ke 'kategori_bukus'
+            $table->foreignId('kategori_id')->nullable()->constrained('kategori_bukus')->onDelete('set null');
+
+            $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('bukus');

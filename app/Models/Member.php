@@ -9,8 +9,6 @@ class Member extends Model
 {
     use HasFactory;
 
-    protected $table = 'members';
-
     protected $fillable = [
         'foto_member',
         'nama_member',
@@ -19,9 +17,9 @@ class Member extends Model
         'no_telepon',
         'email',
         'buku_id',
+        'status', // Tambahan
     ];
 
-    // Relasi: Member meminjam satu Buku
     public function buku()
     {
         return $this->belongsTo(Buku::class, 'buku_id');

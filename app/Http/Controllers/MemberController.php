@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Member;
 use App\Models\Buku;
+use App\Models\Member;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class MemberController extends Controller
 {
@@ -17,80 +16,78 @@ class MemberController extends Controller
 
     public function create()
     {
-        return view('member.create');
+        $bukus = Buku::where('stok', '>', 0)->get();
+        return view('member.create', compact('bukus'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'nama_member' => 'required|string|max:255',
+            'nama_member'   => 'required|string|max:255',
             'jenis_kelamin' => 'required|in:Pria,Wanita',
             'tanggal_lahir' => 'nullable|date',
-            'no_telepon' => 'nullable|string|max:20',
-            'email' => 'required|email|unique:members,email',
-            'foto_member' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'no_telepon'    => 'nullable|string|max:20',
+            'email'         => 'required|email|max:255|unique:members,email',
+            'buku_id'       => 'nullable|exists:bukus,id',
         ]);
 
-        $fotoPath = null;
-        if ($request->hasFile('foto_member')) {
-            $fotoPath = $request->file('foto_member')->store('foto_member', 'public');
-        }
+        // Jika memilih buku, status otomatis 'Masih Dipinjam'
+        $status = $request->buku_id ? 'Masih Dipinjam' : 'Sudah Dikembalikan';
 
         Member::create([
-            'foto_member' => $fotoPath,
-            'nama_member' => $request->nama_member,
+            'nama_member'   => $request->nama_member,
             'jenis_kelamin' => $request->jenis_kelamin,
             'tanggal_lahir' => $request->tanggal_lahir,
-            'no_telepon' => $request->no_telepon,
-            'email' => $request->email,
+            'no_telepon'    => $request->no_telepon,
+            'email'         => $request->email,
+            'buku_id'       => $request->buku_id,
+            'status'        => $status,
         ]);
 
-        return redirect()->route('member.index')->with('success', 'Member berhasil ditambahkan!');
-    }
-
-    public function edit(Member $member)
-    {
-        return view('member.edit', compact('member'));
-    }
-
-    public function update(Request $request, Member $member)
-    {
-        $request->validate([
-            'nama_member' => 'required|string|max:255',
-            'jenis_kelamin' => 'required|in:Pria,Wanita',
-            'tanggal_lahir' => 'nullable|date',
-            'no_telepon' => 'nullable|string|max:20',
-            'email' => 'required|email|unique:members,email,' . $member->id,
-            'foto_member' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
-
-        $fotoPath = $member->foto_member;
-        if ($request->hasFile('foto_member')) {
-            if ($member->foto_member && Storage::disk('public')->exists($member->foto_member)) {
-                Storage::disk('public')->delete($member->foto_member);
-            }
-            $fotoPath = $request->file('foto_member')->store('foto_member', 'public');
+        // Kurangi stok jika meminjam buku
+        if ($request->buku_id) {
+            $buku = Buku::findOrFail($request->buku_id);
+            $buku->decrement('stok');
         }
 
-        $member->update([
-            'foto_member' => $fotoPath,
-            'nama_member' => $request->nama_member,
-            'jenis_kelamin' => $request->jenis_kelamin,
-            'tanggal_lahir' => $request->tanggal_lahir,
-            'no_telepon' => $request->no_telepon,
-            'email' => $request->email,
-        ]);
-
-        return redirect()->route('member.index')->with('success', 'Member berhasil diperbarui!');
+        return redirect()->route('member.index')->with('success', 'Data Peminjam berhasil disimpan!');
     }
 
-    public function destroy(Member $member)
+    // Method untuk Mengembalikan Buku & Menambah Stok
+    public function kembalikanBuku(string $id)
     {
-        if ($member->foto_member && Storage::disk('public')->exists($member->foto_member)) {
-            Storage::disk('public')->delete($member->foto_member);
+        $member = Member::findOrFail($id);
+
+        if ($member->status === 'Masih Dipinjam' && $member->buku_id) {
+            // Tambahkan 1 ke stok buku
+            $buku = Buku::findOrFail($member->buku_id);
+            $buku->increment('stok');
+
+            // Ubah status peminjaman
+            $member->update([
+                'status' => 'Sudah Dikembalikan'
+            ]);
+
+            return redirect()->route('member.index')->with('success', 'Buku berhasil dikembalikan dan stok buku bertambah!');
+        }
+
+        return redirect()->route('member.index')->with('error', 'Status peminjaman tidak dapat diubah.');
+    }
+
+    public function destroy(string $id)
+    {
+        $member = Member::findOrFail($id);
+
+        // Jika member dihapus tapi status masih dipinjam, kembalikan stok buku
+        if ($member->status === 'Masih Dipinjam' && $member->buku_id) {
+            $buku = Buku::find($member->buku_id);
+            if ($buku) {
+                $buku->increment('stok');
+            }
         }
 
         $member->delete();
-        return redirect()->route('member.index')->with('success', 'Member berhasil dihapus!');
+
+        return redirect()->route('member.index')->with('success', 'Data peminjam berhasil dihapus!');
     }
 }

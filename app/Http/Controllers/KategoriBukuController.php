@@ -31,17 +31,19 @@ class KategoriBukuController extends Controller
         return redirect()->route('kategori.index')->with('success', 'Kategori berhasil ditambahkan!');
     }
 
-    public function edit(KategoriBuku $kategori)
+    public function edit(string $id)
     {
+        $kategori = KategoriBuku::findOrFail($id);
         return view('kategori.edit', compact('kategori'));
     }
 
-    public function update(Request $request, KategoriBuku $kategori)
+    public function update(Request $request, string $id)
     {
         $request->validate([
             'nama_kategori' => 'required|string|max:255',
         ]);
 
+        $kategori = KategoriBuku::findOrFail($id);
         $kategori->update([
             'nama_kategori' => $request->nama_kategori,
         ]);
@@ -49,9 +51,11 @@ class KategoriBukuController extends Controller
         return redirect()->route('kategori.index')->with('success', 'Kategori berhasil diperbarui!');
     }
 
-    public function destroy(KategoriBuku $kategori)
+    public function destroy(string $id)
     {
+        $kategori = KategoriBuku::findOrFail($id);
         $kategori->delete();
+
         return redirect()->route('kategori.index')->with('success', 'Kategori berhasil dihapus!');
     }
 }
